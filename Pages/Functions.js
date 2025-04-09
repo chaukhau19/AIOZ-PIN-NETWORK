@@ -1,5 +1,5 @@
 import { expect } from "@playwright/test";
-import { commonconfig } from "../Data/Common.js";
+import { commoncfg_Account,commoncfg_Locator } from "../Data/Common.js";
 
 export class FunctionPage {
     constructor(page) {
@@ -34,6 +34,22 @@ export class FunctionPage {
             default: return this.page.locator(identifier);
         }
     } 
+
+    // Go to the page
+    async gotoURL(URL) {
+        await this.page.waitForTimeout(1000);
+        try {
+            console.log(`Navigating to URL: ${URL}`);
+            await this.page.goto(URL, { timeout: 90000 });
+            await this.page.reload();
+
+        } catch (error) {
+            // console.error(`Failed to load URL: ${error.message}`);
+            // throw new Error("Test Failed: " + error.message);  
+            throw error; 
+            // this.testStatus = false;
+        }
+    }  
 
     // Format number with commas
     convertToPointsWithCommas(number) {
@@ -183,20 +199,7 @@ export class FunctionPage {
         }
     }
     
-    // Go to the page
-    async gotoURL() {
-        await this.page.waitForTimeout(5000);
-        try {
-            await this.page.goto(commonconfig.URL, { timeout: 90000 });
-            await this.page.reload();
 
-        } catch (error) {
-            // console.error(`Failed to load URL: ${error.message}`);
-            // throw new Error("Test Failed: " + error.message);  
-            throw error; 
-            // this.testStatus = false;
-        }
-    }  
 
     async isElementVisible(selector) {
         try {
@@ -226,6 +229,7 @@ export class FunctionPage {
         }
     }   
 
+    // Fill in data and input text
     async fillInputField(identifier, value, type = "xpath", timeout = 50000) {
         try {
             const locator = this.getLocator(identifier, type);
@@ -386,7 +390,6 @@ export class FunctionPage {
             // this.testStatus = false;
         }
     }
-    
     
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////                 BUTTON TO CLICK          //////////////////////////////////////////////////////////////////////////////////////
@@ -685,6 +688,11 @@ export class FunctionPage {
     // Wait until the button appears, then click
     async Unwrap_Button() {
         await this.clickButton(swapconfig.Unwrap_Button, "Unwrap", "xpath");
+    }
+
+    // Wait until the button appears, then click
+    async Gmail_Amount_InputText(amount) {
+        await this.fillInputField(commoncfg_Account.Email, amount, "xpath");
     }
 
     // Wait until the button appears, then click
@@ -1009,8 +1017,8 @@ export class FunctionPage {
     // Wait until the button appears, then click, then verify expect
     async Verify_Account_MetaMask_Connected() {
         await this.clickAndVerify(
-            commonconfig.DashBoard_Avatar_Icon, 
-            commonconfig.Expected_Account_MetaMask_Connected,
+            commoncfg_Account.DashBoard_Avatar_Icon, 
+            commoncfg_Account.Expected_Account_MetaMask_Connected,
             "MetaMask account verification"
         );
     }
@@ -1039,7 +1047,7 @@ export class FunctionPage {
 
     // Wait until the button appears, then verify expect
     async Verify_Account_MetaMask_Disconnected() {
-        await this.verifyElementEnabled(commonconfig.Expected_Account_MetaMask_Disconnected, "MetaMask Disconnect", "xpath");
+        await this.verifyElementEnabled(commoncfg_Account.Expected_Account_MetaMask_Disconnected, "MetaMask Disconnect", "xpath");
     }
 
     // Wait until the button appears, then verify expect
@@ -1476,12 +1484,95 @@ export class FunctionPage {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     
     // Wait until the button appears, then click
+    async SignInGmail() {
+        try {
+            await this.page.waitForTimeout(1000);
+            await this.page.locator(commoncfg_Locator.Gmail_Button).click({ timeout: 30000 });
+            await this.page.locator(commoncfg_Locator.Login_Button).click({ timeout: 30000 });
+            await this.page.getByLabel('Email or phone').fill(commoncfg_Account.Email);
+            await this.page.getByRole('button', { name: 'Next' }).click();
+            await this.page.getByLabel('Enter your password').fill(commoncfg_Account.Password);
+            await this.page.getByRole('button', { name: 'Next' }).click();
+            await this.page.locator(commoncfg_Locator.Box_Gmail_Button).click({ timeout: 30000 });
+            await this.page.waitForTimeout(2000);
+
+        } catch (error) {
+            // console.error(` MetaMask connection error: ${error.message}`);
+            // throw new Error("Test Failed: " + error.message);  
+            throw error; 
+            // this.testStatus = false;  
+        }
+    }    
+    
+    // Wait until the button appears, then click
+    async SignInAIOZPIN() {
+        try {
+            // Step 1: Fill email and open login popup on AIOZPIN WEB tab 1th
+            const newTab1 = await this.page.context().newPage();
+            await newTab1.goto(commoncfg_Account.URL_AIOZPin, { timeout: 30000 });
+            newTab1.locator(commoncfg_Locator.Get_Started_Button).click({ timeout: 30000 });
+            newTab1.locator(commoncfg_Locator.Email_InputText).fill(commoncfg_Account.Email);
+            newTab1.locator(commoncfg_Locator.SignIn_Email_Button).click({ timeout: 30000 });
+            
+            // Step 2: Open NEW TAB (Gmail WEB tab 2nd) to get verification code, On new tab, click Gmail, open verification email and get code
+            const newTab2 = await this.page.context().newPage();
+            await newTab2.goto(commoncfg_Account.URL_Google, { timeout: 30000 });
+            await newTab2.locator(commoncfg_Locator.Gmail_Button).click({ timeout: 30000 });
+            await newTab2.locator(commoncfg_Locator.Box_Gmail_Button).click({ timeout: 30000 });
+            await newTab2.locator(commoncfg_Locator.Mail_AIOZPin).click({ timeout: 30000 });
+
+            const code = await newTab2.locator(commoncfg_Locator.CopyCodeEmailLocator).first().textContent();
+            if (!code) throw new Error("Verification code not found.");
+            
+            const digits = code.trim().split('');
+            console.log("Verification Code:", code.trim());
+
+             // Step 3: back to AIOZPIN WEB tab 1th, fill verification code and click confirm button
+            await newTab2.bringToFront();
+            const otpInputs = newTab1.locator(commoncfg_Locator.PasteCodeEmailLocator);
+            for (let i = 0; i < digits.length; i++) {
+                await otpInputs.nth(i).fill(digits[i]);
+            }
+            await newTab1.waitForTimeout(5000);
+            await newTab1.locator(commoncfg_Locator.Confirm_Login_Button).click({ timeout: 30000 });
+            await newTab1.waitForTimeout(5000);
+
+        } catch (error) {
+            throw new Error(`Sign In AIOZ PIN failed: ${error.message || error}`);
+        }
+    }
+    
+    async GetCodeGmail() {
+        try {
+            const [popup] = await Promise.all([
+                this.page.waitForEvent('popup'),
+                popup.locator(commoncfg_Locator.Gmail_Button).click({ timeout: 30000 }),
+                popup.locator(commoncfg_Locator.Box_Gmail_Button).click({ timeout: 30000 }),
+                popup.locator(commoncfg_Locator.Mail_AIOZPin).click({ timeout: 30000 }),
+                
+            ]);
+            const code = await popup.locator('span[style*="font-size:28px"][style*="padding:24px 64px"]').first().textContent();
+            const digits = code?.trim().split('') || [];
+            console.log("Verification Code:", code?.trim());
+
+            await popup.waitForTimeout(2000);
+            const pages = context.pages(); 
+            await pages[1].bringToFront(); 
+            
+            
+            await popup.waitForTimeout(3000);
+    
+        } catch (error) {
+            throw error;
+        }
+    }
+    // Wait until the button appears, then click
     async Connect_Wallet_MetaMask() {
         try {
             await this.page.waitForTimeout(5000);
-            await this.page.locator(commonconfig.Get_Started_Button).click({ timeout: 30000 });
-            await this.page.locator(commonconfig.SignIn_Wallet_Button).click({ timeout: 30000 });
-            await this.page.locator(commonconfig.Select_MetaMask_Wallet_Button).click({ timeout: 30000 });
+            await this.page.locator(commoncfg_Account.Get_Started_Button).click({ timeout: 30000 });
+            await this.page.locator(commoncfg_Account.SignIn_Wallet_Button).click({ timeout: 30000 });
+            await this.page.locator(commoncfg_Account.Select_MetaMask_Wallet_Button).click({ timeout: 30000 });
 
         } catch (error) {
             // console.error(` MetaMask connection error: ${error.message}`);
@@ -1538,8 +1629,8 @@ export class FunctionPage {
     // Wait until the button appears, then click
     async Disconnect_Wallet_MetaMask() {
         try {
-            await this.page.locator(commonconfig.DashBoard_Avatar_Icon).click({ timeout: 30000 });
-            await this.page.locator(commonconfig.Disconnect_Button).click({ timeout: 30000 });
+            await this.page.locator(commoncfg_Account.DashBoard_Avatar_Icon).click({ timeout: 30000 });
+            await this.page.locator(commoncfg_Account.Disconnect_Button).click({ timeout: 30000 });
 
         } catch (error) {
             // console.error(` MetaMask disconnect error: ${error.message}`);

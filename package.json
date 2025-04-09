@@ -10,8 +10,9 @@
     "preview": "vite preview",
     "//": "Metamask locks chainIDs on port 8545 https://hardhat.org/hardhat-network/docs/metamask-issue",
     "chain": "hardhat node --port 8546",
-    "test:ConnectCoinBase": "yarn build && playwright test tests/1_Dapps/01_CoinBase/CoinBase.spec.js",
-    "test:ConnectMetaMask": "yarn build && playwright test tests/1_Dapps/02_MetaMask/MetaMask.spec.js"
+    "test:ConnectCoinBase": "yarn build && playwright test Tests/1_Dapps/01_CoinBase/CoinBase.spec.js",
+    "test:ConnectMetaMask": "yarn build && playwright test Tests/1_Dapps/02_MetaMask/MetaMask.spec.js",
+    "test:LoginGoogle": "yarn build && playwright test Tests/1_Dapps/03_Login_Google/Valid_Login.spec.js"
   },
   "dependencies": {
     "axios": "^1.7.9",

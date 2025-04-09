@@ -11,7 +11,7 @@ export class ConnectWalletMetaMaskPage {
 
     async Connect_MetaMask(wallet) {
         try {
-            await this.functionPage.gotoURL();
+            await this.functionPage.gotoURL(Commoncfg_Account.URL_AIOZPin);
             await this.functionPage.Connect_Wallet_MetaMask();
             await wallet.approve();
             await this.functionPage.Verify_Account_MetaMask_Connected();
