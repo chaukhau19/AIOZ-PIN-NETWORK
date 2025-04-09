@@ -23,14 +23,10 @@ export class LoginPage {
 
     async Login_AIOZPin(wallet) {
         try {
-            // await this.functionPage.gotoURL(commoncfg_Account.URL_AIOZPin);
             await this.functionPage.SignInAIOZPIN();
-            // await this.functionPage.gotoURL(commoncfg_Account.URL_Google);
-            // await this.functionPage.GetCodeGmail();
-
         } catch (error) {
-            console.warn("Login AIOZPin failed");
-        }
+            console.error("Sign In AIOZ PIN failed:", error.message || error);
+        }        
     }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
